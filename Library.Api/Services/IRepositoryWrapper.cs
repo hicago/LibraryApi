@@ -1,6 +1,6 @@
 ﻿namespace Library.Api.Services
 {
-    interface IRepositoryWrapper
+    public interface IRepositoryWrapper
     {
         IBookRepository Book { get; }
         IAuthorRepository Author { get; }
