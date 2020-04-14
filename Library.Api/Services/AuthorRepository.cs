@@ -19,6 +19,11 @@ namespace Library.Api.Services
         public Task<PagedList<Author>> GetAllAsync(AuthorResourceParameters parameters)
         {
             IQueryable<Author> queryableAuthors = DbContext.Set<Author>();
+            if(!string.IsNullOrWhiteSpace(parameters.BirthPlace))
+            {
+                queryableAuthors = queryableAuthors.Where(m => m.BirthPlace.ToLower() ==
+                    parameters.BirthPlace);
+            }
             return PagedList<Author>.CreateAsync(queryableAuthors, parameters.pageNumber, parameters.PageSize);
         }
     }
