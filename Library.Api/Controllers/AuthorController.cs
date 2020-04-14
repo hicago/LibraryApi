@@ -1,13 +1,14 @@
-﻿using System;
+﻿using AutoMapper;
+using Library.Api.Entities;
+using Library.Api.Helpers;
+using Library.Api.Models;
+using Library.Api.Services;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Library.Api.Entities;
-using Library.Api.Models;
-using Library.Api.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Api.Controllers
 {
@@ -24,13 +25,34 @@ namespace Library.Api.Controllers
             Mapper = mapper;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync()
+        [HttpGet(Name = nameof(GetAuthorsAsync))]
+        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync(
+            [FromQuery] AuthorResourceParameters parameters)
         {
-            var authors = (await RepositoryWrapper.Author.GetAllAsync())
-                .OrderBy(author => author.Name);
+            var pagedList = await RepositoryWrapper.Author.GetAllAsync(parameters);
+            var paginationMetadata = new
+            {
+                totalCount = pagedList.TotalCount,
+                pageSize = pagedList.PageSize,
+                currentPage = pagedList.CurrentPage,
+                totalPages = pagedList.TotalPages,
+                previousPageLink = pagedList.HasPrevious ? Url.Link(nameof(GetAuthorsAsync),
+                new
+                {
+                    pageNumber = pagedList.CurrentPage - 1,
+                    pageSize = pagedList.PageSize
+                }) : null,
+                nextPageLink = pagedList.HasNext ? Url.Link(nameof(GetAuthorsAsync),
+                new
+                {
+                    pageNumber = pagedList.CurrentPage + 1,
+                    pageSize = pagedList.PageSize
+                }) : null
+            };
 
-            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(authors);
+            Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(paginationMetadata));
+
+            var authorDtoList = Mapper.Map<IEnumerable<AuthorDto>>(pagedList);
             return authorDtoList.ToList();
         }
 
@@ -76,7 +98,7 @@ namespace Library.Api.Controllers
 
             RepositoryWrapper.Author.Delete(author);
             var result = await RepositoryWrapper.Author.SaveAsync();
-            if(!result)
+            if (!result)
             {
                 throw new Exception("删除资源author失败");
             }
