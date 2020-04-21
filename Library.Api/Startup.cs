@@ -4,6 +4,7 @@ using Library.Api.Filters;
 using Library.Api.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,7 @@ namespace Library.Api
             ));
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<CheckAuthorExistFilterAttribute>();
+            services.AddSingleton<IHashFactory, HashFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,6 +43,17 @@ namespace Library.Api
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler(appBuilder =>
+                {
+                    appBuilder.Run(async context =>
+                    {
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsync("Unexpected Error");
+                    });
+                });
             }
 
             app.UseRouting();
