@@ -83,7 +83,7 @@ namespace Library.Api.Controllers
             return CreateLinksForAuthor(authorDto);
         }
 
-        [HttpPost]
+        [HttpPost(Name = nameof(CreateAuthorAsync))]
         public async Task<ActionResult> CreateAuthorAsync(AuthorForCreationDto authorForCreationDto)
         {
             var author = Mapper.Map<Author>(authorForCreationDto);
@@ -131,7 +131,7 @@ namespace Library.Api.Controllers
                 Url.Link(nameof(DeleteAuthorAsync), new { authorId = author.Id })));
             author.Links.Add(new Link(HttpMethods.Get,
                 "author's books",
-                Url.Link(nameof(BookController.GetBookAsync), new { authorId = author.Id })));
+                Url.Link(nameof(BookController.GetBooksAsync), new { authorId = author.Id })));
 
             return author;
         }
@@ -150,17 +150,17 @@ namespace Library.Api.Controllers
                 "Create author",
                 Url.Link(nameof(CreateAuthorAsync), null)));
 
-            if(paginationData != null)
+            if (paginationData != null)
             {
-                if(paginationData.previousePageLink != null)
+                if (paginationData.previousPageLink != null)
                 {
                     authors.Links.Add(new Link(HttpMethods.Get,
                         "previous page",
-                        paginationData.previousePageLink));
+                        paginationData.previousPageLink));
                 }
             }
 
-            if(paginationData.nextPageLink != null)
+            if (paginationData.nextPageLink != null)
             {
                 authors.Links.Add(new Link(HttpMethods.Get,
                     "next page",
