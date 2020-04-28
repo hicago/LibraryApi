@@ -1,23 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Library.Api.Entities;
 using Library.Api.Filters;
 using Library.Api.Models;
 using Library.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Net.Http.Headers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Library.Api.Controllers
 {
     [Route("api/authors/{authorId}/books")]
     [ApiController]
     [ServiceFilter(typeof(CheckAuthorExistFilterAttribute))]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class BookController : ControllerBase
     {
         public IRepositoryWrapper RepositoryWrapper { get; }
@@ -33,7 +35,7 @@ namespace Library.Api.Controllers
             HashFactory = hashFactory;
         }
 
-        [HttpGet(Name =nameof(GetBooksAsync))]
+        [HttpGet(Name = nameof(GetBooksAsync))]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetBooksAsync(Guid authorId)
         {
             var books = await RepositoryWrapper.Book.GetBooksAsync(authorId);
@@ -46,7 +48,7 @@ namespace Library.Api.Controllers
         public async Task<ActionResult<BookDto>> GetBookAsync(Guid authorId, Guid bookId)
         {
             var book = await RepositoryWrapper.Book.GetBookAsync(authorId, bookId);
-            if(book == null)
+            if (book == null)
             {
                 return NotFound();
             }
@@ -65,7 +67,7 @@ namespace Library.Api.Controllers
 
             book.AuthorId = authorId;
             RepositoryWrapper.Book.Create(book);
-            if(! await RepositoryWrapper.Book.SaveAsync())
+            if (!await RepositoryWrapper.Book.SaveAsync())
             {
                 throw new Exception("创建资源Book失败");
             }
@@ -103,7 +105,7 @@ namespace Library.Api.Controllers
             }
 
             var entityHash = HashFactory.GetHash(book);
-            if(Request.Headers.TryGetValue(HeaderNames.IfMatch, out var requestETag)
+            if (Request.Headers.TryGetValue(HeaderNames.IfMatch, out var requestETag)
                 && requestETag != entityHash)
             {
                 return StatusCode(StatusCodes.Status412PreconditionFailed);
@@ -111,7 +113,7 @@ namespace Library.Api.Controllers
 
             Mapper.Map(updatedBook, book, typeof(BookForUpdateDto), typeof(Book));
             RepositoryWrapper.Book.Update(book);
-            if (! await RepositoryWrapper.Book.SaveAsync())
+            if (!await RepositoryWrapper.Book.SaveAsync())
             {
                 throw new Exception("更新资源Book失败");
             }
@@ -141,7 +143,7 @@ namespace Library.Api.Controllers
 
             var bookUpdateDto = Mapper.Map<BookForUpdateDto>(book);
             patchDocument.ApplyTo(bookUpdateDto, ModelState);
-            if (! ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
