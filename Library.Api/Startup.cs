@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,18 +35,22 @@ namespace Library.Api
             services.AddDbContextPool<LibraryDbContext>(options => options
                 .UseMySql("Server=192.168.1.105;Database=library;User=root;Password=4544243z;", mySqlOptions => mySqlOptions
                     .ServerVersion(new Version(8, 0, 19), ServerType.MySql)
+                    .MigrationsAssembly(typeof(Startup).Assembly.GetName().Name)
             ));
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<CheckAuthorExistFilterAttribute>();
             services.AddSingleton<IHashFactory, HashFactory>();
+            services.AddIdentity<User, Role>()
+                .AddEntityFrameworkStores<LibraryDbContext>()
+                .AddDefaultTokenProviders();
 
             var tokenSection = Configuration.GetSection("Security:Token");
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            //services.AddAuthentication(options =>
-            //{
-            //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            //})
+            //services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
               .AddJwtBearer(options =>
               {
                   options.TokenValidationParameters = new TokenValidationParameters
